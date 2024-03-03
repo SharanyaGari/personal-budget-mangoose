@@ -2,6 +2,9 @@ const express = require('express');
 const mongoose = require("mongoose");
 const dataModel = require("./modules/data_schema")
 const url = "mongodb://localhost:27017/mongoosedb";
+const bodyParser = require('body-parser');  
+// const urlencodedParser = bodyParser.urlencoded({ extended: false }) 
+const jsonParser = bodyParser.json({ extended: false })
 
 const app = express();
 const port = 3000;
@@ -42,6 +45,31 @@ app.get('/budget', (req, res) => {
             console.log(connectionError)
         })
     
+});
+
+app.post('/budget',jsonParser, (req, res) => {
+    console.log("posting budget...")
+    mongoose.connect(url)
+        .then(() => {
+            const newData = new dataModel(req.body)
+            //console.log("Inserting data: ", req.body)
+            dataModel.insertMany(newData)
+                .then((data) => {
+                    console.log("successfully inserted data")
+                    res.sendStatus(200);
+                    mongoose.connection.close()
+                })
+                .catch((error) => {
+                    res.json({
+                        "errorCode": 500,
+                        "message": error.writeErrors[0].err.errmsg
+                    });
+                    console.log(error)
+                })
+        })
+    .catch((connectionError) => {
+        console.log(connectionError)
+    })
 });
 
 app.listen(port, () => {
